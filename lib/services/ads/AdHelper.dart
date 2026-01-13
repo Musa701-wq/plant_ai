@@ -20,7 +20,8 @@ class AdHelper {
 
   /// iOS → Always use REAL IDs (recommended)
   /// If you want test ads → change to: return kDebugMode;
-  static bool get useTestAds => false;
+  // static bool get useTestAds => false;
+  static bool get useTestAds => kDebugMode;
 
   static String _getAd(String name, {bool rewarded = false}) {
     if (useTestAds) {

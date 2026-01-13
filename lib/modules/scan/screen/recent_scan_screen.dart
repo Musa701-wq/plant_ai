@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:untitled/modules/scan/screen/result_screen.dart';
 import '../../../services/ads/ads_service.dart';
 import '../../../utils/app_colors.dart';
 import '../../../utils/app_text_style.dart';
@@ -53,7 +54,117 @@ class RecentScansScreen extends StatelessWidget {
     );
   }
 }
+class _ScanTile extends StatelessWidget {
+  final ScannedPlant scan;
 
+  const _ScanTile({required this.scan});
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedDate = DateFormat(
+      'MMM d, yyyy • hh:mm a',
+    ).format(scan.scannedAt);
+
+    return InkWell(
+      onTap: () async{
+         await AdService.instance.showRewardedAndWait(
+           onReward: () {
+        print("✅ User earned reward!");
+       Navigator.push(
+         context,
+           MaterialPageRoute(builder: (_) => ResultScreen(scannedPlant: scan)),
+          );
+      },
+       );
+       },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.backgroundCard,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 8), // ✅ Add margin
+        child: Row(
+          children: [
+            // Image Section
+            Container(
+              width: 70, // Fixed width
+              height: 70, // Fixed height
+              margin: const EdgeInsets.all(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: scan.imagePath != null
+                    ? Image.file(
+                  File(scan.imagePath!),
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.cover,
+                )
+                    : Container(
+                  width: 70,
+                  height: 70,
+                  color: AppColors.primaryGreen.withOpacity(0.1),
+                  child: const Icon(Icons.eco, color: AppColors.primaryGreen),
+                ),
+              ),
+            ),
+
+            // Text Section
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      scan.name ?? "Unknown Plant",
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis, // ✅ Prevent overflow
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formattedDate,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Arrow Icon
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                size: 18,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+/*
 class _ScanTile extends StatelessWidget {
   final ScannedPlant scan;
 
@@ -132,6 +243,7 @@ class _ScanTile extends StatelessWidget {
     );
   }
 }
+*/
 
 class _EmptyState extends StatelessWidget {
   @override

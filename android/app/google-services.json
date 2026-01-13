@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "282110903504",
+    "firebase_url": "https://planteye-91a85-default-rtdb.firebaseio.com",
+    "project_id": "planteye-91a85",
+    "storage_bucket": "planteye-91a85.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282110903504:android:a95b984728b1f02605cad5",
+        "android_client_info": {
+          "package_name": "com.example.untitled"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "282110903504-vrp0n4t21enekpg3hg6v511qf1ddirgv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSwyxh68kfyKiHv9E12b_QJmfU3w0jYvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "282110903504-vrp0n4t21enekpg3hg6v511qf1ddirgv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "282110903504-hmg8qe0h1okdmqkansqm3bmqf84jh9ot.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.vectorlabs.planteye"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

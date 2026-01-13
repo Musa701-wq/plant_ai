@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../utils/app_colors.dart';
 import '../../../utils/app_text_style.dart';
 import '../db/model/garden_plant.dart';
+import '../screen/SettingsPage.dart';
 
 class HeaderSection extends StatelessWidget {
   final List<GardenPlant> plants;
@@ -12,9 +13,11 @@ class HeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final needsWater = plants
         .where((p) =>
-        p.reminders.any((r) => r.isActive && 
+        p.reminders.any((r) =>
+        r.isActive &&
             r.nextReminderDateTime != null &&
-            r.nextReminderDateTime!.isBefore(DateTime.now().add(const Duration(days: 1)))))
+            r.nextReminderDateTime!
+                .isBefore(DateTime.now().add(const Duration(days: 1)))))
         .length;
 
     return Container(
@@ -42,6 +45,7 @@ class HeaderSection extends StatelessWidget {
         bottom: false,
         child: Row(
           children: [
+            // Plant Icon
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -54,7 +58,10 @@ class HeaderSection extends StatelessWidget {
                 size: 28,
               ),
             ),
+
             const SizedBox(width: 12),
+
+            // Text section
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,6 +81,19 @@ class HeaderSection extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+
+            // 👉 Settings Button (added)
+            IconButton(
+              icon: const Icon(
+                Icons.settings,
+                color: AppColors.textOnPrimary,
+                size: 26,
+              ),
+              onPressed: () {
+                // TODO: add navigation
+                Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage()));
+              },
             ),
           ],
         ),

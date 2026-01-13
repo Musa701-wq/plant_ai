@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>untitled</string>
+	<string>PlantEyes</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -62,5 +62,25 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <!-- Google Sign-In -->
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.282110903504-hmg8qe0h1okdmqkansqm3bmqf84jh9ot</string>
+            </array>
+        </dict>
+    </array>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_dartobservatory._tcp</string>
+    </array>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Debugging Flutter application</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>We use Face ID to securely authenticate your account.</string>
 </dict>
 </plist>

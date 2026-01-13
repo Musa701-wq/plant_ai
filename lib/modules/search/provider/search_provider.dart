@@ -1,4 +1,7 @@
 // lib/modules/search/provider/search_provider.dart
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:string_similarity/string_similarity.dart'; // optional - used in scoring if you want tighter matching
 import '../helper/all_plant_keyword.dart';
@@ -47,8 +50,45 @@ class SearchProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasMore => _hasMore;
-
   /// Search plants (Pexels)
+  Future<void> searchPlants(String query, {int page = 1}) async {
+    if (query.trim().isEmpty) return;
+    _setLoading(true);
+
+    try {
+      final plants = await repository.searchPlants(query, page: page)
+          .timeout(const Duration(seconds: 15), onTimeout: () {
+        throw TimeoutException('Request took too long');
+      });
+
+      if (page == 1) {
+        _rawResults = plants;
+      } else {
+        _rawResults = [..._rawResults, ...plants];
+      }
+
+      _currentPage = page;
+      _hasMore = plants.isNotEmpty;
+
+      // For global search we may not have a single category. Use combined keywords fallback.
+      // Use 'all' as a pseudo-category and fallback keyword list (allPlantKeywords from keyword_helper if available).
+      _processedResults = _processAndDeduplicate(
+        _rawResults,
+        widgetCategory: null,
+      );
+
+    } on TimeoutException catch (e) {
+      _handleError("Request timeout. Please check your internet connection.");
+    } on SocketException catch (e) {
+      _handleError("No internet connection. Please check your network.");
+    } catch (e) {
+      _handleError("Failed to fetch plants: ${e.toString()}");
+    } finally {
+      _setLoading(false);
+    }
+  }
+  /// Search plants (Pexels)
+/*
   Future<void> searchPlants(String query, {int page = 1}) async {
     if (query.trim().isEmpty) return;
     _setLoading(true);
@@ -77,8 +117,10 @@ class SearchProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
+*/
 
   /// Fetch by category -> central processing/dedupe happens here
+/*
   Future<void> fetchByCategory(String category, {int page = 1}) async {
     if (_isLoading) return;
 
@@ -160,7 +202,99 @@ class SearchProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
+*/
+  /// Fetch by category -> central processing/dedupe happens here
+  Future<void> fetchByCategory(String category, {int page = 1}) async {
+    if (_isLoading) return;
 
+    final categoryKey = category.toLowerCase();
+
+    // ✅ 1. Immediately clear visible results if we are loading fresh (page == 1)
+    if (page == 1) {
+      _rawResults = [];
+      _processedResults = [];
+      _errorMessage = null;
+      _hasMore = true;
+      notifyListeners();
+    }
+
+    // ✅ 2. Check cache first (only for first page)
+    if (page == 1 && _cachedProcessedByCategory.containsKey(categoryKey)) {
+      _rawResults = List<SearchModel>.from(_cachedRawByCategory[categoryKey]!);
+      _processedResults =
+      List<ProcessedPlant>.from(_cachedProcessedByCategory[categoryKey]!);
+      _currentPage = _cachedPageByCategory[categoryKey] ?? 1;
+      _isLoading = false;
+      _hasMore = _processedResults.length < maxItems;
+      notifyListeners();
+      debugPrint("🟢 Loaded '${categoryKey}' plants from cache.");
+      return;
+    }
+
+    _setLoading(true);
+    try {
+      // Add timeout of 15 seconds
+      final plants = await repository.getPlantsByCategory(category, page: page)
+          .timeout(const Duration(seconds: 15), onTimeout: () {
+        throw TimeoutException('Request took too long');
+      });
+
+      if (page == 1) {
+        _rawResults = plants;
+
+        // reset processed
+        _processedResults = _processAndDeduplicate(
+          plants,
+          widgetCategory: category,
+        );
+      } else {
+        _rawResults = [..._rawResults, ...plants];
+
+        // process only the new batch
+        final newProcessed = _processAndDeduplicate(
+          plants,
+          widgetCategory: category,
+        );
+
+        // dedupe across pages by shortName
+        final existingKeys = _processedResults
+            .map((e) => e.shortName.toLowerCase())
+            .toSet();
+
+        final uniqueNew = newProcessed.where(
+              (p) => !existingKeys.contains(p.shortName.toLowerCase()),
+        );
+
+        // append only unique new items → no reshuffle
+        _processedResults.addAll(uniqueNew);
+      }
+
+      _currentPage = page;
+      // stop when reached max or no more from API
+      if (_processedResults.length >= maxItems || plants.isEmpty) {
+        _hasMore = false;
+      } else {
+        _hasMore = plants.length >= itemsPerPage;
+      }
+
+      // ✅ 4. Cache results after successful fetch
+      _cachedRawByCategory[categoryKey] = List<SearchModel>.from(_rawResults);
+      _cachedProcessedByCategory[categoryKey] =
+      List<ProcessedPlant>.from(_processedResults);
+      _cachedPageByCategory[categoryKey] = _currentPage;
+      debugPrint("💾 Cached '${categoryKey}' with ${_processedResults.length} plants.");
+
+    } on TimeoutException catch (e) {
+      _handleError("Request timeout. Please check your internet connection.");
+    } on SocketException catch (e) {
+      _handleError("No internet connection. Please check your network.");
+    } catch (e) {
+      _handleError("Failed to load category: ${e.toString()}");
+    } finally {
+      _setLoading(false);
+    }
+  }
+  /// Search plants (Pexels)
   /// Load more
   Future<void> loadMore({String? query, String? category}) async {
     if (!_hasMore || _isLoading) return;
