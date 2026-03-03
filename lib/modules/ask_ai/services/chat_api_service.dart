@@ -15,7 +15,7 @@ class GeminiChatApiService {
   Future<String> sendMessageWithContext(List<Map<String, dynamic>> messages) async {
     // ✅ Use the latest supported model
     final url = Uri.parse(
-      "$baseUrl/models/gemini-2.5-flash:generateContent?key=$apiKey",
+      "$baseUrl/models/gemini-2.5-flash-image:generateContent?key=$apiKey",
     );
 
     // 🔑 System prompt for restriction + better responses
@@ -85,7 +85,7 @@ Rules:
   // --------------------------------------------------------------
   Future<PlantModel> fetchPlantDetailsByName(String plantName) async {
     final url = Uri.parse(
-      "$baseUrl/models/gemini-2.5-flash:generateContent?key=$apiKey",
+      "$baseUrl/models/gemini-2.5-flash-image:generateContent?key=$apiKey",
     );
 
     final prompt = """
@@ -189,7 +189,7 @@ If you don't recognize the plant name, respond with:
     required String tempUnit, // "C" or "F"
   }) async {
     final url = Uri.parse(
-      "$baseUrl/models/gemini-2.5-flash:generateContent?key=$apiKey",
+      "$baseUrl/models/gemini-2.5-flash-image:generateContent?key=$apiKey",
     );
 
     final prompt = """

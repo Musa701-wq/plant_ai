@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -26,6 +27,7 @@ import 'modules/search/provider/search_provider.dart';
 import 'modules/search/repo/search_repo.dart';
 import 'modules/search/services/search_api_service.dart';
 import 'my_app/my_app.dart';
+final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +55,9 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    // 4️⃣ Log a test event so device appears in DebugView
+    await analytics.logEvent(name: 'debug_view_test');
+    print('📊 Logged debug_view_test event for DebugView');
 
     debugPrint("✅ [Firebase ready in ${DateTime.now().millisecondsSinceEpoch - tFb}ms]");
 
@@ -185,6 +190,7 @@ Future<void> main() async {
         GeminiChatApiService(dotenv.env['GEMINI_API_KEY'] ?? "NOT_FOUND"),
       ),
     );
+
 
     final searchProvider = SearchProvider(SearchRepository(SearchApiService()));
 

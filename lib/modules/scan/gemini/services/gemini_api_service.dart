@@ -10,7 +10,7 @@ class GeminiApiService {
   GeminiApiService(this.apiKey);
 
   static const String _modelUrl =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent";
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
 
   Future<PlantModel> identifyPlant(File imageFile) async {
     try {
