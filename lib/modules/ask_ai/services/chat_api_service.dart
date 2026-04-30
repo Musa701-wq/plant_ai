@@ -7,7 +7,7 @@ import '../../scan/gemini/model/plant_model.dart';
 
 class GeminiChatApiService {
   final String apiKey;
-  final String baseUrl = "https://generativelanguage.googleapis.com/v1";
+  final String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
 
   GeminiChatApiService(this.apiKey);
 
@@ -58,6 +58,10 @@ Rules:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data["usageMetadata"] != null) {
+          final usage = data["usageMetadata"];
+          debugPrint("📊 [Tokens] Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Total: ${usage['totalTokenCount']}");
+        }
         final candidates = data["candidates"] as List?;
         if (candidates != null && candidates.isNotEmpty) {
           final parts = candidates[0]["content"]["parts"] as List?;
@@ -144,6 +148,10 @@ If you don't recognize the plant name, respond with:
       }
 
       final data = jsonDecode(response.body);
+      if (data["usageMetadata"] != null) {
+        final usage = data["usageMetadata"];
+        debugPrint("📊 [Tokens] Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Total: ${usage['totalTokenCount']}");
+      }
       final text = data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
 
       if (text == null || text.isEmpty) {
@@ -249,6 +257,10 @@ If you cannot determine a plan, return:
       }
 
       final data = jsonDecode(response.body);
+      if (data["usageMetadata"] != null) {
+        final usage = data["usageMetadata"];
+        debugPrint("📊 [Tokens] Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Total: ${usage['totalTokenCount']}");
+      }
       final text = data["candidates"]?[0]?["content"]?[0]?["parts"]?[0]?["text"]
           ?? data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
 

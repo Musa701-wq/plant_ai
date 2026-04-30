@@ -53,7 +53,7 @@ class AdProvider with ChangeNotifier {
   Future<void> preloadAd(AdType type, {dynamic adSize}) async {
     switch (type) {
       case AdType.rewardedAd:
-        return _loadRewarded();
+        return;
       default:
         return _loadNative(type, adSize);
     }
@@ -108,95 +108,7 @@ class AdProvider with ChangeNotifier {
     }
   }
 
-  /// Load rewarded ad
-  Future<void> _loadRewarded() async {
-    if (_isEarningCredits) {
-      debugPrint("⏳ [Ad] Already loading rewarded ad");
-      return;
-    }
 
-    try {
-      _isEarningCredits = true;
-      notifyListeners();
-
-      debugPrint("📺 [Ad] Loading rewarded ad...");
-
-      await RewardedAd.load(
-        adUnitId: AdHelper.lensAd,
-        request: const AdRequest(),
-        rewardedAdLoadCallback: RewardedAdLoadCallback(
-          onAdLoaded: (ad) {
-            debugPrint("✅ [Ad] Rewarded ad loaded");
-            _rewardedAd = ad;
-            _setState(AdType.rewardedAd, true);
-            _isEarningCredits = false;
-            notifyListeners();
-          },
-          onAdFailedToLoad: (err) {
-            debugPrint("❌ [Ad] Rewarded ad failed: $err");
-            _setState(AdType.rewardedAd, false);
-            _isEarningCredits = false;
-            notifyListeners();
-          },
-        ),
-      );
-    } catch (e) {
-      debugPrint("❌ [Ad] Rewarded ad error: $e");
-      _isEarningCredits = false;
-      notifyListeners();
-    }
-  }
-
-  /// Show rewarded ad and earn credits
-  Future<bool> showRewardedAdForCredits() async {
-    if (_rewardedAd == null) {
-      debugPrint("⚠️ [Ad] Rewarded ad not loaded");
-      return false;
-    }
-
-    try {
-      bool earnedCredits = false;
-
-      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdShowedFullScreenContent: (ad) {
-          debugPrint("📺 [Ad] Rewarded ad showed");
-        },
-        onAdDismissedFullScreenContent: (ad) {
-          debugPrint("👋 [Ad] Rewarded ad dismissed");
-          ad.dispose();
-          _rewardedAd = null;
-          _setState(AdType.rewardedAd, false);
-          // Preload next ad
-          _loadRewarded();
-        },
-        onAdFailedToShowFullScreenContent: (ad, err) {
-          debugPrint("❌ [Ad] Failed to show: $err");
-          ad.dispose();
-          _rewardedAd = null;
-          _setState(AdType.rewardedAd, false);
-        },
-      );
-
-      await _rewardedAd!.show(
-        onUserEarnedReward: (ad, reward) async {
-          debugPrint("🎁 [Ad] User earned reward!");
-
-          // Add credits
-          final success = await creditManager.rewardForAd();
-
-          if (success) {
-            earnedCredits = true;
-            debugPrint("✅ [Ad] Added ${CreditManager.rewardedAdCredits} credits");
-          }
-        },
-      );
-
-      return earnedCredits;
-    } catch (e) {
-      debugPrint("❌ [Ad] Show rewarded ad error: $e");
-      return false;
-    }
-  }
 
   /// Helpers
   void _setState(AdType type, bool value) {

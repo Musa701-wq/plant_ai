@@ -9,6 +9,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:untitled/services/ads/AdsProvider.dart';
 import 'Auth/auth_state.dart';
+import 'Auth/SharedPreferencesService.dart';
 import 'firebase_options.dart';
 import 'modules/my_garden/services/CreditManager.dart';
 import 'modules/my_garden/services/IAPManager.dart';
@@ -176,6 +177,10 @@ Future<void> main() async {
 
     debugPrint("✅ [NotificationService ready in ${DateTime.now().millisecondsSinceEpoch - tNoti}ms]");
 
+    // ✅ Check if onboarding should be shown
+    final bool showOnboarding = await SharedPreferencesService.shouldShowOnboarding();
+    debugPrint("📱 [Startup] Should show onboarding: $showOnboarding");
+
     debugPrint("🎉 [Startup] All systems ready in ${startupTimer.elapsedMilliseconds}ms!");
 
     // Create other providers
@@ -205,6 +210,7 @@ Future<void> main() async {
         creditManager: creditManager,
         adProvider: adProvider,
         authState: authState, // Pass authState
+        showOnboarding: showOnboarding, // Pass onboarding status
       ),
     );
 

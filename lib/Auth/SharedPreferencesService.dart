@@ -14,6 +14,7 @@ class SharedPreferencesService {
   static const String _keyEmailVerified = 'email_verified';
   static const String _keyProviders = 'providers';
   static const String _keyLastSignIn = 'last_sign_in';
+  static const String _keyShowOnboarding = 'show_onboarding';
 
   /// Save user data to SharedPreferences after sign-in
   static Future<bool> saveUserData(User user, {String? photoBase64}) async {
@@ -230,6 +231,27 @@ class SharedPreferencesService {
     } catch (e) {
       debugPrint("❌ [SharedPreferences] Error updating last sign-in: $e");
       return false;
+    }
+  }
+
+  /// Check if onboarding should be shown (default: true)
+  static Future<bool> shouldShowOnboarding() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_keyShowOnboarding) ?? true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /// Mark onboarding as seen
+  static Future<void> setOnboardingSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyShowOnboarding, false);
+      debugPrint("✅ [SharedPreferences] Onboarding marked as seen");
+    } catch (e) {
+      debugPrint("❌ [SharedPreferences] Error setting onboarding seen: $e");
     }
   }
 }

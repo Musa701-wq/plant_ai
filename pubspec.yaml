@@ -70,6 +70,7 @@ dependencies:
   url_launcher: ^6.1.10
   http:
   connectivity_plus: ^7.0.0
+  marquee: ^2.3.0
 
 dev_dependencies:
   flutter_test:

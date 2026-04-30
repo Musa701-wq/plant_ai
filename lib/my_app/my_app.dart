@@ -25,7 +25,8 @@ class MyApp extends StatelessWidget {
   final SearchProvider searchProvider;
   final CreditManager creditManager;
   final AdProvider adProvider;
-  final AuthState authState; // ✅ ADD THIS
+  final AuthState authState;
+  final bool showOnboarding; // ✅ ADD THIS
 
   const MyApp({
     super.key,
@@ -36,7 +37,8 @@ class MyApp extends StatelessWidget {
     required this.searchProvider,
     required this.creditManager,
     required this.adProvider,
-    required this.authState, // ✅ ADD THIS
+    required this.authState,
+    required this.showOnboarding, // ✅ ADD THIS
   });
 
   @override
@@ -71,7 +73,7 @@ class MyApp extends StatelessWidget {
             type: BottomNavigationBarType.fixed,
           ),
         ),
-        initialRoute: AppRoutes.main,
+        initialRoute: showOnboarding ? AppRoutes.onboarding : AppRoutes.main,
         onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,
       ),

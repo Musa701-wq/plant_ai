@@ -1123,6 +1123,7 @@ import '../widgets/loading_state.dart';
 import '../widgets/modern_faq_list.dart';
 import '../widgets/modern_section.dart';
 import '../widgets/plant_header_card.dart';
+import '../../my_garden/widgets/insufficient_credits_dialog.dart';
 
 class ResultScreen extends StatefulWidget {
   final String? imagePath;
@@ -1255,31 +1256,7 @@ class _ResultScreenState extends State<ResultScreen> {
   /// Show dialog when user has insufficient credits
   void _showInsufficientCreditsDialog() {
     if (!mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Insufficient Credits'),
-        content: const Text(
-          'You need 5 credits to view plant details. Purchase more credits or watch an ad to earn credits.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to credits purchase screen
-              //Navigator.pushNamed(context, '/credits_purchase');
-              Navigator.push(context, MaterialPageRoute(builder: (context) => CreditsPurchaseScreen()));
-            },
-            child: const Text('Get Credits'),
-          ),
-        ],
-      ),
-    );
+    InsufficientCreditsDialog.show(context);
   }
 
   Future<void> _fetchDetailsFromGarden(String plantName) async {

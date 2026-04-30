@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../model/plant_model.dart';
+import '../model/pest_model.dart';
 import '../services/gemini_api_service.dart';
 
 class PlantRepository {
@@ -20,6 +21,20 @@ class PlantRepository {
       return plant;
     } catch (e, st) {
       debugPrint("❌ [PlantRepository] Identification failed: $e\n$st");
+      rethrow;
+    }
+  }
+
+  /// Identify a pest from the image using Gemini API.
+  Future<PestModel> identifyPest(File imageFile) async {
+    try {
+      debugPrint("📤 [PlantRepository] Sending image to Gemini for pest identification...");
+      final pest = await apiService.identifyPest(imageFile);
+
+      debugPrint("✅ [PlantRepository] Successfully identified pest: ${pest.name}");
+      return pest;
+    } catch (e, st) {
+      debugPrint("❌ [PlantRepository] Pest identification failed: $e\n$st");
       rethrow;
     }
   }

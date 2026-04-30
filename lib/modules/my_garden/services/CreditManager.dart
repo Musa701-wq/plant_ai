@@ -7,8 +7,8 @@ class CreditManager extends ChangeNotifier {
   static const String _creditKey = 'user_credits';
   static const String _firstLaunchKey = 'first_launch';
   static const String _lastSyncKey = 'last_credit_sync';
-  static const int _initialCredits = 30;
-  static const int _rewardedAdCredits = 3;
+  static const int _initialCredits = 10;
+
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -240,10 +240,7 @@ class CreditManager extends ChangeNotifier {
     }
   }
 
-  /// Reward user with credits for watching ad
-  Future<bool> rewardForAd() async {
-    return await addCredits(_rewardedAdCredits, reason: 'rewarded_ad');
-  }
+
 
   /// Sync credits from Firestore (manual refresh)
   Future<void> syncCredits() async {
@@ -264,8 +261,7 @@ class CreditManager extends ChangeNotifier {
     return _credits >= required;
   }
 
-  /// Get rewarded ad credits amount
-  static int get rewardedAdCredits => _rewardedAdCredits;
+
 
   /// Get initial credits amount
   static int get initialCredits => _initialCredits;

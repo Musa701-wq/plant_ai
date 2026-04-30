@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../model/plant_model.dart';
+import '../model/pest_model.dart';
 
 class GeminiApiService {
   final String apiKey;
@@ -83,6 +84,10 @@ If unsure, still return your best guess and include a confidence < 0.6.
       }
 
       final data = jsonDecode(response.body);
+      if (data["usageMetadata"] != null) {
+        final usage = data["usageMetadata"];
+        debugPrint("📊 [Tokens] Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Total: ${usage['totalTokenCount']}");
+      }
       final text = data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
 
       if (text == null || text.isEmpty) {
@@ -101,6 +106,81 @@ If unsure, still return your best guess and include a confidence < 0.6.
     } catch (e, st) {
       debugPrint("❌ [GeminiApiService] Error: $e\n$st");
       throw Exception("Gemini API error: $e");
+    }
+  }
+
+  Future<PestModel> identifyPest(File imageFile) async {
+    try {
+      debugPrint("🐛 [GeminiApiService] Starting pest identification...");
+
+      final bytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      const prompt = """
+You are a professional entomologist and plant pathologist expert.
+
+Task: Identify the plant pest (insect, mite, or disease) in the provided image. 
+Return **ONLY one JSON object** (no markdown or explanation) matching this schema:
+
+{
+  "name": "Common name of the pest",
+  "scientific_name": "Scientific name",
+  "confidence": 0.0,
+  "description": "A short overview of the pest",
+  "symptoms": "What signs to look for on the plant",
+  "organic_treatment": "3-4 direct steps for organic/natural treatment",
+  "prevention": "How to prevent this pest in the future",
+  "affected_plants": ["plant 1", "plant 2"]
+}
+
+If the image does NOT contain a pest or plant disease, respond with:
+{"error": "No significant pest or disease detected in the image."}
+
+Focus specifically on organic and natural treatment suggestions.
+""";
+
+      final requestBody = jsonEncode({
+        "contents": [
+          {
+            "parts": [
+              {"text": prompt},
+              {
+                "inline_data": {
+                  "mime_type": "image/jpeg",
+                  "data": base64Image,
+                }
+              }
+            ]
+          }
+        ]
+      });
+
+      final response = await http.post(
+        Uri.parse("$_modelUrl?key=$apiKey"),
+        headers: {"Content-Type": "application/json"},
+        body: requestBody,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception("Gemini API failed with ${response.statusCode}: ${response.body}");
+      }
+
+      final data = jsonDecode(response.body);
+      final text = data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
+
+      if (text == null || text.isEmpty) {
+        throw Exception("Empty response from Gemini API");
+      }
+
+      final jsonData = _extractJsonFromText(text);
+      if (jsonData.containsKey("error")) {
+        throw Exception(jsonData["error"]);
+      }
+
+      return PestModel.fromJson(jsonData);
+    } catch (e, st) {
+      debugPrint("❌ [GeminiApiService] Pest ID Error: $e\n$st");
+      throw Exception("Pest identification error: $e");
     }
   }
 

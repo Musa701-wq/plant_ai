@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import '../gemini/model/plant_model.dart';
+import '../gemini/model/pest_model.dart';
 import '../gemini/repo/plant_repo.dart';
 import '../db/database/scan_db.dart';
 import '../db/model/scanned_plant.dart';
@@ -23,8 +24,10 @@ class ScanProvider with ChangeNotifier {
   ScanProvider(this.plantRepo);
 
   ScannedPlant? get lastScannedPlant => _lastScannedPlant;
-  PlantModel? _plantResult;
   PlantModel? get plantResult => _plantResult;
+
+  PestModel? _pestResult;
+  PestModel? get pestResult => _pestResult;
 
   CameraController? get cameraController => _cameraController;
   bool get isInitialized => _isInitialized;
@@ -241,6 +244,40 @@ class ScanProvider with ChangeNotifier {
     }
   }
 
+  /// Identify pest - API call only
+  Future<void> identifyPest() async {
+    if (_selectedImage == null) {
+      _error = "No image selected.";
+      notifyListeners();
+      return;
+    }
+
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      debugPrint("🐛 Sending image to Gemini for pest identification...");
+
+      final result = await plantRepo.identifyPest(_selectedImage!);
+
+      if (result.name.toLowerCase().contains("error") || result.name.isEmpty) {
+        _error = "Couldn't identify any pest in this image. Please try another one.";
+        return;
+      }
+
+      _pestResult = result;
+      debugPrint("✅ Pest identified: ${result.name}");
+
+    } catch (e, st) {
+      _error = "Pest identification failed: $e";
+      debugPrint("❌ Pest identification error: $e\n$st");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void setPlantFromScanned(ScannedPlant scanned) {
     _plantResult = scanned.toPlantModel();
     _selectedImage = File(scanned.imagePath!);
@@ -286,6 +323,7 @@ class ScanProvider with ChangeNotifier {
     _error = null;
     _isLoading = false;
     _plantResult = null;
+    _pestResult = null;
     notifyListeners();
   }
 
@@ -294,6 +332,7 @@ class ScanProvider with ChangeNotifier {
     _error = null;
     _isLoading = false;
     _plantResult = null;
+    _pestResult = null;
     // ❌ no notifyListeners() here
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:marquee/marquee.dart';
+import '../../my_garden/services/PromoPurchaseScreen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -101,6 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  // Promo Marquee
+                  _buildPromoMarquee(context, widthScale, heightScale),
+                  SizedBox(height: heightScale(16)),
+
                   // Stats Section
                   _buildModernStatsSection(
                     fontScale,
@@ -155,6 +161,49 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromoMarquee(BuildContext context, double Function(double) widthScale, double Function(double) heightScale) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PromoPurchaseScreen()),
+        );
+      },
+      child: Container(
+        height: heightScale(45),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF9800), // AppColors.accentOrange (or similar) to attract attention
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Marquee(
+            text: '🌟 Special Offer: Unlock 250 Credits Now! Tap here to grab the Starter Pack! 🌟   ',
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+            scrollAxis: Axis.horizontal,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            blankSpace: 30.0,
+            velocity: 40.0,
+            pauseAfterRound: const Duration(seconds: 1),
+            startPadding: 10.0,
+            accelerationDuration: const Duration(seconds: 1),
+            accelerationCurve: Curves.linear,
+            decelerationDuration: const Duration(milliseconds: 500),
+            decelerationCurve: Curves.easeOut,
+          ),
         ),
       ),
     );
@@ -781,6 +830,15 @@ class _HomeScreenState extends State<HomeScreen> {
             scale,
             isSmallScreen,
                 () => _showWaterCalculator(context),
+          ),
+          _buildModernToolCard(
+            'Pest Doctor',
+            Icons.bug_report_rounded,
+            'Identify & treat',
+            const Color(0xFFD32F2F),
+            scale,
+            isSmallScreen,
+                () => Navigator.pushNamed(context, AppRoutes.pestScan),
           ),
         ],
       ),

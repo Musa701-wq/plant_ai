@@ -681,6 +681,7 @@ import '../../../utils/app_colors.dart';
 import '../../../utils/app_text_style.dart';
 import '../../my_garden/services/CreditManager.dart';
 import '../../my_garden/services/CreditsPurchaseScreen.dart';
+import '../../my_garden/widgets/insufficient_credits_dialog.dart';
 import '../provider/ask_ai_provider.dart';
 import '../widgets/typing_indicator.dart';
 
@@ -725,40 +726,7 @@ class _AskAiScreenState extends State<AskAiScreen> {
   }
 
   void _showInsufficientCreditsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.orange, size: 28),
-            const SizedBox(width: 12),
-            const Text('Insufficient Credits'),
-          ],
-        ),
-        content: Text(
-          'You need ${AskAiProvider.creditCostPerQuestion} credit to ask a question.\n\nGet more credits by watching ads or purchasing credit packages.',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to credits purchase screen
-              Navigator.pushNamed(context, '/credits_purchase');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-            ),
-            child: const Text('Get Credits'),
-          ),
-        ],
-      ),
-    );
+    InsufficientCreditsDialog.show(context);
   }
 
   void _showErrorDialog(BuildContext context, String message) {
