@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
-import '../../../Auth/auth_state.dart';
 import '../../../my_app/app_routes.dart';
-import '../../../utils/app_colors.dart';
-import '../../../utils/app_text_style.dart';
 import '../../scan/provider/scan_provider.dart';
 import '../../scan/widgets/image_preview.dart';
 import '../../scan/widgets/scan_control.dart';

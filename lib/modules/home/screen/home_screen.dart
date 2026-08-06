@@ -22,6 +22,7 @@ import '../../my_garden/db/database/garden_db.dart';
 import '../../my_garden/screen/set_reminder_screen.dart';
 import '../../scan/db/database/scan_db.dart';
 import '../widgets/water_calc_sheet.dart';
+import '../../ask_ai/screen/ask_ai_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -84,6 +85,28 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Scaffold(
         backgroundColor: AppColors.backgroundLight,
+        floatingActionButton: FloatingActionButton.extended(
+          heroTag: 'ask_ai_home_fab',
+          onPressed: () {
+            AnalyticsService.trackAskAiHomeCard();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AskAiScreen()),
+            );
+          },
+          backgroundColor: const Color(0xFFFF6B35),
+          foregroundColor: Colors.white,
+          elevation: 6,
+          icon: const Icon(Icons.auto_awesome_rounded, size: 20),
+          label: const Text(
+            'Ask AI',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
@@ -426,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return InkWell(
       onTap: () {
-        context.read<AppStateProvider>().changeTab(4);
+        context.read<AppStateProvider>().changeTab(3);
       },
       borderRadius: BorderRadius.circular(24),
       child: Container(
@@ -689,8 +712,11 @@ class _HomeScreenState extends State<HomeScreen> {
               scale,
               isSmallScreen,
                   () {
-                AnalyticsService.trackAskAiHomeCard(); // ✅ Click only
-                context.read<AppStateProvider>().changeTab(1);
+                AnalyticsService.trackAskAiHomeCard();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AskAiScreen()),
+                );
               },
             ),
             _buildModernActionCard(
@@ -701,8 +727,8 @@ class _HomeScreenState extends State<HomeScreen> {
               scale,
               isSmallScreen,
                   () {
-                AnalyticsService.trackMyGardenHomeCard(); // ✅ Click only
-                context.read<AppStateProvider>().changeTab(4);
+                AnalyticsService.trackMyGardenHomeCard();
+                context.read<AppStateProvider>().changeTab(3); // My Garden (tab 3)
               },
             ),
             _buildModernActionCard(
@@ -713,8 +739,8 @@ class _HomeScreenState extends State<HomeScreen> {
               scale,
               isSmallScreen,
                   () {
-                AnalyticsService.trackCalendarHomeCard(); // ✅ Click only
-                context.read<AppStateProvider>().changeTab(3);
+                AnalyticsService.trackCalendarHomeCard();
+                context.read<AppStateProvider>().changeTab(2);
               },
             ),
           ],

@@ -1,10 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../services/s3_service.dart';
+import '../../my_garden/provider/SettingsProvider.dart';
+import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import '../gemini/model/plant_model.dart';
 import '../gemini/model/pest_model.dart';
 import '../gemini/repo/plant_repo.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../db/database/scan_db.dart';
 import '../db/model/scanned_plant.dart';
 
@@ -23,6 +30,7 @@ class ScanProvider with ChangeNotifier {
   final PlantRepository plantRepo;
   ScanProvider(this.plantRepo);
 
+  PlantModel? _plantResult;
   ScannedPlant? get lastScannedPlant => _lastScannedPlant;
   PlantModel? get plantResult => _plantResult;
 
@@ -204,7 +212,7 @@ class ScanProvider with ChangeNotifier {
   }
   
   /// Identify plant - API call only, no navigation
-  Future<void> identifyPlant() async {
+  Future<void> identifyPlant(BuildContext context) async {
     if (_selectedImage == null) {
       _error = "No image selected.";
       notifyListeners();
@@ -218,8 +226,10 @@ class ScanProvider with ChangeNotifier {
 
       debugPrint("🌿 Sending image to Gemini for identification...");
 
+      final imageToUpload = _selectedImage!; // 📸 Capture reference early
+
       // 🔍 Ask Gemini to identify the plant
-      final result = await plantRepo.identifyPlant(_selectedImage!);
+      final result = await plantRepo.identifyPlant(imageToUpload);
 
       // 🧠 Validate the Gemini response
       if (result.name.toLowerCase().contains("error") ||
@@ -230,10 +240,20 @@ class ScanProvider with ChangeNotifier {
         return;
       }
 
+      // ✅ Save image permanently before creating ScannedPlant
+      final permanentFile = await saveImagePermanently(imageToUpload);
+      final permanentPath = permanentFile.path;
+
       // ✅ Set result for the UI
       _plantResult = result;
-      _lastScannedPlant = ScannedPlant.fromPlantModel(result, imagePath: _selectedImage?.path);
-      debugPrint("✅ Plant identified: ${result.name}");
+      _plantResult?.imagePath = permanentPath; // Update model path
+      
+      _lastScannedPlant = ScannedPlant.fromPlantModel(result, imagePath: permanentPath);
+      debugPrint("✅ Plant identified: ${result.name} (Permanent path: $permanentPath)");
+
+      // 📤 Community Upload logic — using captured reference
+      debugPrint('📤 [identifyPlant] Triggering community upload...');
+      await pushToCommunity(context, result.name, "plant", permanentFile, description: result.about);
 
     } catch (e, st) {
       _error = "Identification failed: $e";
@@ -244,8 +264,37 @@ class ScanProvider with ChangeNotifier {
     }
   }
 
+  /// Save image permanently to application documents directory
+  Future<File> saveImagePermanently(File imageFile) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final name = p.basename(imageFile.path);
+      // Create a unique name to avoid collisions if same filename is reused by picker
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final permanentPath = p.join(directory.path, 'scans', '${timestamp}_$name');
+      
+      // Ensure directory exists
+      final saveDir = Directory(p.dirname(permanentPath));
+      if (!await saveDir.exists()) {
+        await saveDir.create(recursive: true);
+      }
+
+      final permanentFile = await imageFile.copy(permanentPath);
+      debugPrint("💾 Image saved permanently to: ${permanentFile.path}");
+      return permanentFile;
+    } catch (e) {
+      debugPrint("❌ Failed to save image permanently: $e");
+      return imageFile; // Fallback to original path if copy fails
+    }
+  }
+
   /// Identify pest - API call only
-  Future<void> identifyPest() async {
+  Future<void> identifyPest(BuildContext context) async {
+    debugPrint('════════════════════════════════════════');
+    debugPrint('🐛 [identifyPest] Called');
+    debugPrint('   _selectedImage: ${_selectedImage?.path ?? "NULL"}');
+    debugPrint('════════════════════════════════════════');
+
     if (_selectedImage == null) {
       _error = "No image selected.";
       notifyListeners();
@@ -257,17 +306,26 @@ class ScanProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      debugPrint("🐛 Sending image to Gemini for pest identification...");
+      debugPrint("🐛 [identifyPest] Sending image to Gemini...");
 
-      final result = await plantRepo.identifyPest(_selectedImage!);
+      final imageToUpload = _selectedImage!; // 📸 Capture reference early
+
+      final result = await plantRepo.identifyPest(imageToUpload);
+
+      debugPrint('✅ [identifyPest] Gemini result: ${result.name}');
 
       if (result.name.toLowerCase().contains("error") || result.name.isEmpty) {
         _error = "Couldn't identify any pest in this image. Please try another one.";
+        debugPrint('⚠️ [identifyPest] Invalid result — aborting community upload');
         return;
       }
 
       _pestResult = result;
       debugPrint("✅ Pest identified: ${result.name}");
+
+      // 📤 Community Upload logic — using captured reference
+      debugPrint('📤 [identifyPest] Triggering community upload...');
+      await pushToCommunity(context, result.name, "pest", imageToUpload, description: result.description);
 
     } catch (e, st) {
       _error = "Pest identification failed: $e";
@@ -334,6 +392,69 @@ class ScanProvider with ChangeNotifier {
     _plantResult = null;
     _pestResult = null;
     // ❌ no notifyListeners() here
+  }
+
+  /// Handle community upload if enabled
+  Future<void> pushToCommunity(
+    BuildContext context, 
+    String itemName, 
+    String type, 
+    File? imageFile, {
+    String? description,
+    String? existingImageUrl,
+  }) async {
+    try {
+      debugPrint('════════════════════════════════════════');
+      debugPrint('🌐 [CommunityUpload] Triggered for "$itemName" ($type)');
+
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      debugPrint('   Toggle ON: ${settingsProvider.communityUploadEnabled}');
+
+      if (!settingsProvider.communityUploadEnabled) {
+        debugPrint('   ⏭️ Skipped: user has community upload DISABLED');
+        debugPrint('════════════════════════════════════════');
+        return;
+      }
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        debugPrint('   ❌ No logged-in user — aborting');
+        debugPrint('════════════════════════════════════════');
+        return;
+      }
+
+      debugPrint('   👤 User: ${user.email} (${user.uid})');
+      debugPrint('   📁 Image: ${imageFile?.path ?? "NONE"}');
+      debugPrint('   🔗 Existing URL: ${existingImageUrl ?? "NONE"}');
+      debugPrint('════════════════════════════════════════');
+
+      String? finalImageUrl = existingImageUrl;
+      
+      // If no existing URL, we must have a file to upload
+      if (finalImageUrl == null && imageFile != null) {
+        finalImageUrl = await S3Service.uploadImage(imageFile);
+      }
+
+      if (finalImageUrl != null) {
+        debugPrint('💾 [CommunityUpload] Saving to Firestore community_images...');
+        await FirebaseFirestore.instance.collection('community_images').add({
+          'userId': user.uid,
+          'userName': user.displayName ?? 'Anonymous',
+          'userEmail': user.email ?? '',
+          'imageUrl': finalImageUrl,
+          'itemName': itemName,
+          'type': type,
+          'description': description ?? '',
+          'timestamp': FieldValue.serverTimestamp(),
+          'likes': [], // Initialize with empty likes list
+        });
+        debugPrint('✅ [CommunityUpload] Saved successfully!');
+      } else {
+        debugPrint('⚠️ [CommunityUpload] S3 upload returned null — Firestore NOT updated');
+      }
+    } catch (e) {
+      debugPrint('❌ [CommunityUpload] Error: $e');
+    }
   }
 
   @override

@@ -6,13 +6,6 @@ import 'CreditManager.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'IAPManager.dart';
 
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../services/ads/AdsProvider.dart';
-import 'CreditManager.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import 'IAPManager.dart';
-
 class CreditsPurchaseScreen extends StatefulWidget {
   const CreditsPurchaseScreen({Key? key}) : super(key: key);
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:untitled/Auth/auth_state.dart';
 import 'package:untitled/services/ads/AdsProvider.dart';
@@ -9,9 +8,6 @@ import '../modules/calender/provider/calender_provider.dart';
 import '../modules/my_garden/provider/SettingsProvider.dart';
 import '../modules/my_garden/provider/garden_provider.dart';
 import '../modules/my_garden/services/CreditManager.dart';
-import '../modules/navigator/main_navigator.dart';
-import '../modules/scan/gemini/repo/plant_repo.dart';
-import '../modules/scan/gemini/services/gemini_api_service.dart';
 import '../modules/scan/provider/scan_provider.dart';
 import '../modules/search/provider/search_provider.dart';
 import '../utils/app_colors.dart';

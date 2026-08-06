@@ -68,6 +68,7 @@ class UserFirestoreService {
         'emailVerified': user.emailVerified,
         'lastSignIn': FieldValue.serverTimestamp(),
         'providers': user.providerData.map((info) => info.providerId).toList(),
+        'communityUploadEnabled': true, // Default to true for new users
       };
 
       // Add initial credits and timestamps for new users
@@ -246,6 +247,21 @@ class UserFirestoreService {
 
     } catch (e) {
       debugPrint("❌ [Firestore] Error deleting user: $e");
+      return false;
+    }
+  }
+
+  /// Update community upload toggle in Firestore
+  static Future<bool> updateUserCommunityUpload(String uid, bool enabled) async {
+    try {
+      debugPrint("💾 [Firestore] Updating community upload toggle for UID: $uid to $enabled");
+      await _firestore
+          .collection(_usersCollection)
+          .doc(uid)
+          .update({'communityUploadEnabled': enabled});
+      return true;
+    } catch (e) {
+      debugPrint("❌ [Firestore] Error updating community upload toggle: $e");
       return false;
     }
   }

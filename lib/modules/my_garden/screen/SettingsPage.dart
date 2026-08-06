@@ -674,6 +674,39 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: CreditsCard(),
                 ),
 
+                // Community Upload Toggle
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: SwitchListTile(
+                      activeColor: const Color(0xFF2E7D32),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      title: const Text(
+                        'Auto-upload to Community',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      subtitle: const Text(
+                        'Automatically share your identified plants and pests with the community.',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      value: provider.communityUploadEnabled,
+                      onChanged: (value) async {
+                        await provider.toggleCommunityUpload(value);
+                      },
+                      secondary: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2E7D32).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.people_outline, color: Color(0xFF2E7D32)),
+                      ),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 24),
 
                 // Delete Account and Sign Out Buttons

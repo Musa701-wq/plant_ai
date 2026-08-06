@@ -199,6 +199,7 @@ class CreditManager extends ChangeNotifier {
   /// Deduct credits
   Future<bool> deductCredits(int amount, {String reason = 'usage'}) async {
     try {
+
       if (_credits < amount) {
         debugPrint("⚠️ [CreditManager] Insufficient credits. Need: $amount, Have: $_credits");
         return false;

@@ -32,7 +32,12 @@ class _PestResultScreenState extends State<PestResultScreen> {
 
   Future<void> _identifyPest() async {
     final provider = Provider.of<ScanProvider>(context, listen: false);
-    await provider.identifyPest();
+
+    // ✅ Ensure the gallery/camera image is set in provider before identification
+    debugPrint('🐛 [PestResultScreen] Setting image: ${widget.imagePath}');
+    provider.setSelectedImage(File(widget.imagePath));
+
+    await provider.identifyPest(context);
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -242,6 +247,28 @@ class _PestResultScreenState extends State<PestResultScreen> {
                                       'Back to Home',
                                       style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                                     ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          "Disclaimer: This analysis and treatment advice is AI-generated for informational purposes. Always exercise caution and consult a professional for critical plant care.",
+                                          style: TextStyle(fontSize: 12, color: Colors.orange[800], height: 1.4),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 40),

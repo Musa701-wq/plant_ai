@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../modules/ask_ai/screen/ask_ai_screen.dart';
 import '../modules/calender/screen/calender_screen.dart';
 import '../modules/home/screen/home_screen.dart';
+import '../modules/home/screen/CommunityPage.dart';
 import '../modules/my_garden/screen/my_garden_screen.dart';
 import '../modules/navigator/main_navigator.dart';
 import '../modules/scan/screen/recent_scan_screen.dart';
@@ -22,6 +23,7 @@ class AppRoutes {
   static const String scan = '/scan';
   static const String calendar = '/calendar';
   static const String myGarden = '/my-garden';
+  static const String community = '/community';
   static const String result = '/result';
   static const String search = '/search';
   static const String recentScans = '/recent-scans';
@@ -54,6 +56,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const CalendarScreen());
       case myGarden:
         return MaterialPageRoute(builder: (_) => const MyGardenScreen());
+      case community:
+        return MaterialPageRoute(builder: (_) => const CommunityPage());
       case search:
         return MaterialPageRoute(builder: (_) => const SearchScreen());
       // case subscription:

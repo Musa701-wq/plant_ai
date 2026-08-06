@@ -15,6 +15,7 @@ class SharedPreferencesService {
   static const String _keyProviders = 'providers';
   static const String _keyLastSignIn = 'last_sign_in';
   static const String _keyShowOnboarding = 'show_onboarding';
+  static const String _keyCommunityUploadEnabled = 'community_upload_enabled';
 
   /// Save user data to SharedPreferences after sign-in
   static Future<bool> saveUserData(User user, {String? photoBase64}) async {
@@ -32,6 +33,11 @@ class SharedPreferencesService {
       await prefs.setString(_keyPhotoBase64, photoBase64 ?? '');
       await prefs.setBool(_keyEmailVerified, user.emailVerified);
       await prefs.setString(_keyLastSignIn, DateTime.now().toIso8601String());
+      
+      // Initialize community upload to true by default if not set
+      if (prefs.getBool(_keyCommunityUploadEnabled) == null) {
+        await prefs.setBool(_keyCommunityUploadEnabled, true);
+      }
 
       // Save providers as JSON string
       final providers = user.providerData.map((info) => info.providerId).toList();
@@ -175,6 +181,7 @@ class SharedPreferencesService {
         'emailVerified': prefs.getBool(_keyEmailVerified) ?? false,
         'providers': providers,
         'lastSignIn': prefs.getString(_keyLastSignIn) ?? '',
+        'communityUploadEnabled': prefs.getBool(_keyCommunityUploadEnabled) ?? true,
       };
     } catch (e) {
       debugPrint("❌ [SharedPreferences] Error getting user data: $e");
@@ -198,6 +205,7 @@ class SharedPreferencesService {
       await prefs.remove(_keyEmailVerified);
       await prefs.remove(_keyProviders);
       await prefs.remove(_keyLastSignIn);
+      await prefs.remove(_keyCommunityUploadEnabled);
 
       debugPrint("✅ [SharedPreferences] User data cleared successfully");
       return true;
@@ -252,6 +260,29 @@ class SharedPreferencesService {
       debugPrint("✅ [SharedPreferences] Onboarding marked as seen");
     } catch (e) {
       debugPrint("❌ [SharedPreferences] Error setting onboarding seen: $e");
+    }
+  }
+
+  /// Get community upload toggle state
+  static Future<bool> isCommunityUploadEnabled() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_keyCommunityUploadEnabled) ?? true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /// Set community upload toggle state
+  static Future<bool> setCommunityUploadEnabled(bool enabled) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyCommunityUploadEnabled, enabled);
+      debugPrint("✅ [SharedPreferences] Community upload toggle updated: $enabled");
+      return true;
+    } catch (e) {
+      debugPrint("❌ [SharedPreferences] Error updating community upload toggle: $e");
+      return false;
     }
   }
 }

@@ -398,7 +398,7 @@ class _MyGardenScreenState extends State<MyGardenScreen> {
       width: fabSize,
       height: fabSize,
       child: FloatingActionButton(
-        heroTag: null,
+        heroTag: 'my_garden_add_fab',
         onPressed: _addNewPlant,
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: AppColors.textOnPrimary,

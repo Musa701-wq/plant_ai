@@ -6,6 +6,7 @@ import '../../../utils/app_text_style.dart';
 import '../db/database/garden_db.dart';
 import '../provider/garden_provider.dart';
 import '../db/model/garden_plant.dart';
+import '../../scan/provider/scan_provider.dart';
 
 class AddPlantFormSheet extends StatefulWidget {
   final String plantName;
@@ -353,6 +354,23 @@ class _AddPlantFormSheetState extends State<AddPlantFormSheet> {
 
       // Add via provider (which internally uses Hive)
       await gardenProvider.addPlant(plant);
+
+      // 📤 [Community Upload] Push to community if enabled
+      try {
+        final scanProvider = Provider.of<ScanProvider>(context, listen: false);
+        final isNetwork = widget.imageUrl.startsWith('http');
+        
+        await scanProvider.pushToCommunity(
+          context,
+          plant.name,
+          "plant",
+          isNetwork ? null : File(widget.imageUrl),
+          description: widget.description ?? "Added a new plant to my garden: ${plant.name}",
+          existingImageUrl: isNetwork ? widget.imageUrl : null,
+        );
+      } catch (ce) {
+        debugPrint("⚠️ Community post failed in AddPlantFormSheet: $ce");
+      }
 
 // ✅ Instead of showing snackbar here, return success to parent
       if (mounted) {

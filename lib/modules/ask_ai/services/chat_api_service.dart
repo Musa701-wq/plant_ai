@@ -2,21 +2,21 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart'; // for debugPrint
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../../scan/gemini/model/plant_model.dart';
 
 class GeminiChatApiService {
-  final String apiKey;
-  final String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
+  final String apiKey; // Kept for backwards compatibility but not used
+  // Using Production Server
+  static const String _baseUrl = 'https://apps-model-server.mirdemy.com';
+  static String get _accessKey => dotenv.env['LABMATE_API_KEY'] ?? '';
 
   GeminiChatApiService(this.apiKey);
 
   /// Send message with context (last few messages)
   Future<String> sendMessageWithContext(List<Map<String, dynamic>> messages) async {
-    // ✅ Use the latest supported model
-    final url = Uri.parse(
-      "$baseUrl/models/gemini-2.5-flash-image:generateContent?key=$apiKey",
-    );
+    final url = Uri.parse("$_baseUrl/api/plantai");
 
     // 🔑 System prompt for restriction + better responses
     const systemPrompt = """
@@ -30,56 +30,50 @@ Rules:
 - Always keep a warm and encouraging tone.
 """;
 
+    // Combine history into a single string since endpoint takes "prompt"
+    String combinedPrompt = systemPrompt + "\n\nConversation History:\n";
+    for (var msg in messages) {
+      final role = msg['role'];
+      final parts = msg['parts'] as List;
+      final text = parts.isNotEmpty ? parts[0]['text'] : '';
+      combinedPrompt += "${role == 'user' ? 'User' : 'AI'}: $text\n";
+    }
+    // Add instruction to reply only to the last user message based on context
+    combinedPrompt += "\nBased on the above conversation, please provide the next response as the AI.";
+
     final body = {
-      "contents": [
-        {
-          "role": "user",
-          "parts": [
-            {"text": systemPrompt}
-          ]
-        },
-        ...messages, // Include conversation context
-      ]
+      "prompt": combinedPrompt
     };
 
     try {
-      // 🪵 Debug logs
       debugPrint("🌿 [GeminiChatApiService] Sending request to: $url");
-      debugPrint("📝 [Request Body]: ${jsonEncode(body)}");
+      debugPrint("📤 [Payload Body]: ${jsonEncode(body)}");
 
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": _accessKey
+        },
         body: jsonEncode(body),
       );
 
       debugPrint("📡 [Response Status Code]: ${response.statusCode}");
-      debugPrint("📩 [Raw Response Body]: ${response.body}");
+      debugPrint("📥 [Response Body]: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data["usageMetadata"] != null) {
-          final usage = data["usageMetadata"];
-          debugPrint("📊 [Tokens] Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Total: ${usage['totalTokenCount']}");
-        }
-        final candidates = data["candidates"] as List?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final parts = candidates[0]["content"]["parts"] as List?;
-          final text = parts != null && parts.isNotEmpty ? parts[0]["text"] : null;
-          debugPrint("✅ [AI Response Text]: $text");
-          return text ?? "Sorry, I couldn’t generate a response.";
-        } else {
-          debugPrint("⚠️ [Warning]: No candidates returned from AI.");
-          return "No response from AI.";
-        }
+        final text = data['result'];
+        debugPrint("✅ [AI Response Text]: $text");
+        return text ?? "Sorry, I couldn’t generate a response at this moment.";
       } else {
-        debugPrint("❌ [Error] Response failed: ${response.body}");
-        throw Exception("Failed to fetch AI response: ${response.body}");
+        debugPrint("❌ API Error [${response.statusCode}]: ${response.body}");
+        throw Exception("We couldn't reach the server. Please try again later.");
       }
     } catch (e, stack) {
       debugPrint("💥 [Exception Caught]: $e");
       debugPrint("🧱 [Stack Trace]: $stack");
-      return "Error occurred while connecting to AI: $e";
+      return "An unexpected error occurred. Please try again later.";
     }
   }
 
@@ -88,9 +82,7 @@ Rules:
   // 🌱 NEW METHOD: Fetch Plant Details by Name (text-based request)
   // --------------------------------------------------------------
   Future<PlantModel> fetchPlantDetailsByName(String plantName) async {
-    final url = Uri.parse(
-      "$baseUrl/models/gemini-2.5-flash-image:generateContent?key=$apiKey",
-    );
+    final url = Uri.parse("$_baseUrl/api/plantai");
 
     final prompt = """
 You are a professional botanist and plant expert 🌿.
@@ -124,41 +116,36 @@ If you don't recognize the plant name, respond with:
 """;
 
     final body = {
-      "contents": [
-        {
-          "role": "user",
-          "parts": [
-            {"text": prompt}
-          ]
-        }
-      ]
+      "prompt": prompt
     };
 
     try {
-      debugPrint("🌱 [GeminiChatApiService] Fetching details for: $plantName");
+      debugPrint("🌱 [GeminiChatApiService] Fetching details for: $plantName\nURL: $url");
+      debugPrint("📤 [Payload Body]: ${jsonEncode(body)}");
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": _accessKey
+        },
         body: jsonEncode(body),
       );
 
       debugPrint("📡 [Response Code]: ${response.statusCode}");
+      debugPrint("📥 [Response Body]: ${response.body}");
       if (response.statusCode != 200) {
-        throw Exception("Gemini API error: ${response.body}");
+        debugPrint("❌ API Error [${response.statusCode}]: ${response.body}");
+        throw Exception("Unable to fetch plant details right now. Please try again.");
       }
 
       final data = jsonDecode(response.body);
-      if (data["usageMetadata"] != null) {
-        final usage = data["usageMetadata"];
-        debugPrint("📊 [Tokens] Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Total: ${usage['totalTokenCount']}");
-      }
-      final text = data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
+      final text = data['result'];
 
-      if (text == null || text.isEmpty) {
-        throw Exception("Empty response for plant: $plantName");
+      if (text == null || (text as String).isEmpty) {
+        throw Exception("We received an empty response. Please try again.");
       }
 
-      final jsonData = _extractJsonFromText(text);
+      final jsonData = _extractJsonFromText(text as String);
       debugPrint("🌿 [Parsed Gemini JSON]: $jsonData");
 
       if (jsonData.containsKey("error")) {
@@ -196,9 +183,7 @@ If you don't recognize the plant name, respond with:
     required double temperature, // numeric
     required String tempUnit, // "C" or "F"
   }) async {
-    final url = Uri.parse(
-      "$baseUrl/models/gemini-2.5-flash-image:generateContent?key=$apiKey",
-    );
+    final url = Uri.parse("$_baseUrl/api/plantai");
 
     final prompt = """
 You are a professional plant care assistant 🌿.
@@ -232,40 +217,33 @@ If you cannot determine a plan, return:
 """;
 
     final body = {
-      "contents": [
-        {
-          "role": "user",
-          "parts": [
-            {"text": prompt}
-          ]
-        }
-      ]
+      "prompt": prompt
     };
 
     try {
-      debugPrint("🌊 [Gemini] Fetching watering plan for: $plantName");
+      debugPrint("🌊 [Gemini] Fetching watering plan for: $plantName\nURL: $url");
+      debugPrint("📤 [Payload Body]: ${jsonEncode(body)}");
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": _accessKey
+        },
         body: jsonEncode(body),
       );
 
       debugPrint("📡 [Response Code]: ${response.statusCode}");
+      debugPrint("📥 [Response Body]: ${response.body}");
       if (response.statusCode != 200) {
-        debugPrint("❌ [Gemini] error: ${response.body}");
-        throw Exception("Gemini API error: ${response.body}");
+        debugPrint("❌ API Error [${response.statusCode}]: ${response.body}");
+        throw Exception("Unable to generate a watering plan right now. Please try again.");
       }
 
       final data = jsonDecode(response.body);
-      if (data["usageMetadata"] != null) {
-        final usage = data["usageMetadata"];
-        debugPrint("📊 [Tokens] Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Total: ${usage['totalTokenCount']}");
-      }
-      final text = data["candidates"]?[0]?["content"]?[0]?["parts"]?[0]?["text"]
-          ?? data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
+      final text = data['result'];
 
       if (text == null || (text as String).trim().isEmpty) {
-        throw Exception("Empty response from Gemini for watering plan");
+        throw Exception("We received an empty response. Please try again.");
       }
 
       final jsonData = _extractJsonFromText(text as String);

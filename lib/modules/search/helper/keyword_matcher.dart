@@ -2,7 +2,7 @@ import 'package:string_similarity/string_similarity.dart';
 
 /// Common stop words & filler words often in Pexels captions
 final Set<String> _stopWords = {
-  'a','an','the','and','of','in','up','down','to','from','as','with','on','at','for','from','by','to',
+  'a','an','the','and','of','in','up','down','to','from','as','with','on','at','for','by',
   'photo','image','photograph','picture','photographer','stock',
   'beautiful','lovely','stunning','experience','tranquility','serenity',
   'nature','outdoors','outdoor','landscape','scenery','closeup','macro',

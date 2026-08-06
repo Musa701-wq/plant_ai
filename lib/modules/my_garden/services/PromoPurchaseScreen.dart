@@ -229,8 +229,7 @@ class _PromoPurchaseScreenState extends State<PromoPurchaseScreen> {
             ),
           ),
           
-          // Lower Part: Purchase Details
-          Expanded(
+            Expanded(
             flex: 5,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),

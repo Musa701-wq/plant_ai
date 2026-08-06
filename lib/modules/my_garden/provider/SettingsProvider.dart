@@ -302,6 +302,7 @@ class SettingsProvider extends ChangeNotifier {
   String _displayName = 'User';
   String _email = 'No email';
   String _accountType = 'FREE ACCOUNT';
+  bool _communityUploadEnabled = true;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -309,6 +310,7 @@ class SettingsProvider extends ChangeNotifier {
   String get displayName => _displayName;
   String get email => _email;
   String get accountType => _accountType;
+  bool get communityUploadEnabled => _communityUploadEnabled;
 
   /// Load user data from SharedPreferences and Firestore
   Future<void> loadUserData() async {
@@ -368,6 +370,15 @@ class SettingsProvider extends ChangeNotifier {
       _accountType = providers.contains('google.com') || providers.contains('apple.com')
           ? 'SIGNED IN ACCOUNT'
           : 'FREE ACCOUNT';
+
+      // Load community upload setting
+      _communityUploadEnabled = await SharedPreferencesService.isCommunityUploadEnabled();
+      
+      if (firestoreData != null && firestoreData.containsKey('communityUploadEnabled')) {
+        _communityUploadEnabled = firestoreData['communityUploadEnabled'] ?? true;
+        // Sync to local
+        await SharedPreferencesService.setCommunityUploadEnabled(_communityUploadEnabled);
+      }
 
       debugPrint("✅ [SettingsProvider] User data loaded successfully");
       debugPrint("   - Name: $_displayName");
@@ -603,5 +614,26 @@ class SettingsProvider extends ChangeNotifier {
   /// Refresh user data
   Future<void> refresh() async {
     await loadUserData();
+  }
+
+  /// Toggle community upload
+  Future<void> toggleCommunityUpload(bool enabled) async {
+    try {
+      _communityUploadEnabled = enabled;
+      notifyListeners();
+
+      // Update SharedPreferences
+      await SharedPreferencesService.setCommunityUploadEnabled(enabled);
+
+      // Update Firestore
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await UserFirestoreService.updateUserCommunityUpload(user.uid, enabled);
+      }
+      
+      debugPrint("✅ [SettingsProvider] Community upload toggled to: $enabled");
+    } catch (e) {
+      debugPrint("❌ [SettingsProvider] Error toggling community upload: $e");
+    }
   }
 }
